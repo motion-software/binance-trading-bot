@@ -5,8 +5,8 @@ var markets = [];
 var boughtCurrencies = [];
 var marketFilters = {};
 
-const APIKEY = 'h7RZD9RMsqPd8JQeVX1R0zdzx7l6K5gAaABbtBkvsdSo1GpiFiSZDJuRuee49Q2q';
-const APISECRET = 'Fj01NaKU697e949f4IzpBlDhzoIWqWEnfVrtaRTbgoctRVsAhkBYoAVt2XCdg0PK';
+const APIKEY = '';
+const APISECRET = '';
 
 
 const binance = require('node-binance-api')().options({
