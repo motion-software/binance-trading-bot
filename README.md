@@ -87,88 +87,88 @@ For our test strategy we are going to gather the chart data from Binance API and
 
 After we know the balance we need to get the markets in which we can trade. Then we will subscribe for char price updates, and we will implement our strategy. When the buy/sell conditions are met we will send buy/sell orders to the exchange. Right after they are executed we are going to create a new order with the opposite action and a profitable price.
 
-    binance.exchangeInfo(function (error, data) {
-     data.symbols.forEach(function (symbol) {
-     if (symbol.baseAsset == tradeRules.currency || symbol.quoteAsset == tradeRules.currency) {
-     marketFilters[symbol.symbol] = symbol.filters;
-     markets.push(symbol.symbol);
-     }
-     });
-     console.log(markets);
-     binance.websockets.chart(markets, "1m", function (symbol, interval, chart) {
-     let arr = Object.values(chart).map(a => a.low).sort();
-     let sum = Object.values(chart).map(a => a.low).reduce(function (a, b) {
-     return Number(a) + Number(b);
-     });
-     let average = sum / Object.values(chart).length;
-     if (symbol.startsWith(tradeRules.currency)) {
-     if (arr[arr.length - 1] * tradeRules.sellTarget > average) {
-     console.log(chalk.green(new Date().toUTCString(), `Sell ${symbol}  ${arr[arr.length - 1]} price`));
-     let quantity = (boughtCurrencies[tradeRules.currency] * tradeRules.quantity).toFixed();
-     let price = arr[arr.length - 1];
-     let filtersForMarket = marketFilters[symbol];
-     let result = filter(filtersForMarket, quantity, price);
-     quantity = result.quantity;
-     price = result.price;
-     binance.sell(symbol, quantity, price, {type: "LIMIT"}, (error, response) => {
-     if (!error) {
-     console.log(chalk.green(new Date().toUTCString(), "Order Id", response.orderId));
-     boughtCurrencies[tradeRules.currency] -= response.executedQty;
-     let buyPrice = arr[arr.length - 1] * tradeRules.buyTarget;
-     let buyQuantity = (Number(response.executedQty) * Number(response.price)) / buyPrice;
-     let result = filter(filtersForMarket, buyQuantity, buyPrice);
-     buyQuantity = result.quantity;
-     buyPrice = result.price;
-     binance.buy(symbol, buyQuantity, buyPrice, {}, (error, response) => {
-     if (!error) {
-     boughtCurrencies[tradeRules.currency] += response.executedQty;
-     }
-     });
-     }
-     });
-     }
-     } else {
-     if (arr[arr.length - 1] < average) {
-     console.log(chalk.green(new Date().toUTCString(), `Buy ${symbol}  ${arr[arr.length - 1].low} price`));
-     let quantity = (tradeRules.quantity).toFixed();
-     let price = arr[arr.length - 1];
-     let result = filter(filtersForMarket, quantity, price);
-     quantity = result.quantity;
-     price = result.price;
+        binance.exchangeInfo(function (error, data) {
+        data.symbols.forEach(function (symbol) {
+            if (symbol.baseAsset == tradeRules.currency || symbol.quoteAsset == tradeRules.currency) {
+                marketFilters[symbol.symbol] = symbol.filters;
+                markets.push(symbol.symbol);
+            }
+        });
+        console.log(markets);
+        binance.websockets.chart(markets, "1m", function (symbol, interval, chart) {
+            let arr = Object.values(chart).map(a => a.low).sort();
+            let sum = Object.values(chart).map(a => a.low).reduce(function (a, b) {
+                return Number(a) + Number(b);
+            });
+            let average = sum / Object.values(chart).length;
+            if (symbol.startsWith(tradeRules.currency)) {
+                if (arr[arr.length - 1] * tradeRules.sellTarget > average) {
+                    console.log(chalk.green(new Date().toUTCString(), `Sell ${symbol}  ${arr[arr.length - 1]} price`));
+                    let quantity = (boughtCurrencies[tradeRules.currency] * tradeRules.quantity).toFixed();
+                    let price = arr[arr.length - 1];
+                    let filtersForMarket = marketFilters[symbol];
+                    let result = filter(filtersForMarket, quantity, price);
+                    quantity = result.quantity;
+                    price = result.price;
+                    binance.sell(symbol, quantity, price, {type: "LIMIT"}, (error, response) => {
+                        if (!error) {
+                            console.log(chalk.green(new Date().toUTCString(), "Order Id", response.orderId));
+                            boughtCurrencies[tradeRules.currency] -= response.executedQty;
+                            let buyPrice = arr[arr.length - 1] * tradeRules.buyTarget;
+                            let buyQuantity = (Number(response.executedQty) * Number(response.price)) / buyPrice;
+                            let result = filter(filtersForMarket, buyQuantity, buyPrice);
+                            buyQuantity = result.quantity;
+                            buyPrice = result.price;
+                            binance.buy(symbol, buyQuantity, buyPrice, {}, (error, response) => {
+                                if (!error) {
+                                    boughtCurrencies[tradeRules.currency] += response.executedQty;
+                                }
+                            });
+                        }
+                    });
+                }
+            } else {
+                if (arr[arr.length - 1] < average) {
+                    console.log(chalk.green(new Date().toUTCString(), `Buy ${symbol}  ${arr[arr.length - 1].low} price`));
+                    let quantity = (tradeRules.quantity).toFixed();
+                    let price = arr[arr.length - 1];
+                    let result = filter(filtersForMarket, quantity, price);
+                    quantity = result.quantity;
+                    price = result.price;
     
-     binance.buy(symbol, quantity, arr[arr.length - 1], {type: 'LIMIT'}, (error, response) => {
-     if (!error) {
-     console.log(chalk.green(new Date().toUTCString(), "Order Id", response.orderId));
-     boughtCurrencies[tradeRules.currency] -= response.executedQty;
-     let sellPrice = arr[arr.length - 1] * tradeRules.sellTarget;
-     let sellQuantity = quantity;
-     binance.sell(symbol, sellQuantity, sellPrice, {type: 'LIMIT'}, (erorr, response) => {
-     boughtCurrencies[tradeRules.currency] += response.executedQty;
-     });
-     }
-     });
-     }
-     }
-     });
+                    binance.buy(symbol, quantity, arr[arr.length - 1], {type: 'LIMIT'}, (error, response) => {
+                        if (!error) {
+                            console.log(chalk.green(new Date().toUTCString(), "Order Id", response.orderId));
+                            boughtCurrencies[tradeRules.currency] -= response.executedQty;
+                            let sellPrice = arr[arr.length - 1] * tradeRules.sellTarget;
+                            let sellQuantity = quantity;
+                            binance.sell(symbol, sellQuantity, sellPrice, {type: 'LIMIT'}, (erorr, response) => {
+                                boughtCurrencies[tradeRules.currency] += response.executedQty;
+                            });
+                        }
+                    });
+                }
+            }
+        });
     });
     
     function filter(filtersForMarket, quantity, price) {
-     for (let filter of filtersForMarket) {
-     if (filter.filterType == "LOT_SIZE") {
-     if (Number(filter.minQty) > quantity) {
-     quantity = filter.minQty;
-     }
-     if (Number(filter.maxQty) < quantity) {
-     quantity = filter.maxQty;
-     }
-     }
-     if (filter.filterType == "MIN_NOTIONAL") {
-     if (Number(filter.minNotional) > quantity * price) {
-     quantity = Math.ceil((Number(filter.minNotional) / price));
-     }
-     }
-     }
-     return {quantity, price};
+        for (let filter of filtersForMarket) {
+            if (filter.filterType == "LOT_SIZE") {
+                if (Number(filter.minQty) > quantity) {
+                    quantity = filter.minQty;
+                }
+                if (Number(filter.maxQty) < quantity) {
+                    quantity = filter.maxQty;
+                }
+            }
+            if (filter.filterType == "MIN_NOTIONAL") {
+                if (Number(filter.minNotional) > quantity * price) {
+                    quantity = Math.ceil((Number(filter.minNotional) / price));
+                }
+            }
+        }
+        return {quantity, price};
     }
 
 This is the implementation of the logic mentioned before. It’s not very pretty but this is a start.
@@ -180,4 +180,5 @@ This tutorial is just the beginning, there is a lot of work in order to create a
 Trying to answer the question we posed in the beginning of this post, it is complicated to build a crypto trading bot, yes, but it is not impossible.
 
  [**Blog post link**](http://motion-software.com/blog/crypto-trading-bot-tutorial-javascript/)
+
 
